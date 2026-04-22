@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/18/data
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: >
+      postgres -c max_connections=1000
+               -c shared_buffers=256MB
+               -c effective_cache_size=768MB
+               -c maintenance_work_mem=64MB
+               -c checkpoint_completion_target=0.7
+               -c wal_buffers=16MB
+               -c default_statistics_target=100
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+
+  user_service:
+    image: user_service:latest
+    container_name: user_service
+    env_file:
+      - ./.env
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
+    driver: local
