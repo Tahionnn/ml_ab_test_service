@@ -1,0 +1,16 @@
+from typing import Protocol
+
+from domain.experiments.entities import Experiment, ExperimentStatus
+
+
+class ExperimentsRepo(Protocol):
+    async def get_by_id(self, experiment_id: int) -> Experiment | None: ...
+    async def save(self, experiment: Experiment) -> Experiment: ...
+    async def list_all(
+        self,
+        status: ExperimentStatus | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[Experiment]: ...
+    async def delete_by_id(self, experiment_id: int) -> None: ...
+    async def restore_by_id(self, experiment_id: int) -> Experiment: ...

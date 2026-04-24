@@ -19,9 +19,12 @@ repos:
           - pydantic
           - pydantic-settings
           - types-requests
+          - sqlalchemy[mypy]
         args:
           - --strict
           - --ignore-missing-imports
+          - --explicit-package-bases
+          - --namespace-packages
         exclude: ^coding-agent/tests/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -38,4 +41,3 @@ repos:
     hooks:
       - id: pyupgrade
         args: [--py311-plus]
-
