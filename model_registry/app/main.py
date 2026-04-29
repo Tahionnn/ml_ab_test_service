@@ -3,10 +3,10 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database.database import create_tables
+from core.database import create_tables
+from core.exceptions import register_exceptions
 
-from users.router import user_router
-from auth.router import auth_router
+from api.v1.models import model_router
 
 
 @asynccontextmanager
@@ -21,10 +21,12 @@ app = FastAPI(
 )
 
 
-routers = (user_router, auth_router)
+routers = [model_router]
 
 for router in routers:
     app.include_router(router)
+
+register_exceptions(app)
 
 app.add_middleware(
     CORSMiddleware,

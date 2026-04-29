@@ -1,0 +1,27 @@
+from typing import Protocol
+
+from domain.model.entities import Model, ModelStatus
+
+
+class ModelRepo(Protocol):
+    async def get_by_id(self, model_id: int) -> Model | None: ...
+    async def get_by_name_and_version(
+        self, name: str, version: str
+    ) -> Model | None: ...
+    async def search(
+        self, query: str, limit: int, offset: int
+    ) -> tuple[list[Model], int]: ...
+    async def save(self, model: Model) -> Model: ...
+    async def update_status(self, model_id: int, new_status: ModelStatus) -> Model: ...
+    async def update_serving_endpoint(
+        self,
+        model_id: int,
+        endpoint: str,
+    ) -> Model: ...
+    async def list_all(
+        self,
+        status: ModelStatus | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[Model]: ...
+    async def delete_by_id(self, model_id: int) -> None: ...

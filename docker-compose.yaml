@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:18
     container_name: postgres
     environment:
       POSTGRES_USER: postgres
@@ -23,12 +23,18 @@ services:
     stdin_open: true
 
   user_service:
-    image: user_service:latest
+    build: ./user_service
     container_name: user_service
     env_file:
       - ./.env
     ports:
       - "8000:8000"
+    volumes:
+      - ./user_service:/app
+      - /app/.venv
+      - /app/__pycache__
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
 
   experiment_service:
       build: ./experiment_manager
@@ -38,11 +44,23 @@ services:
       ports:
         - "8001:8000"
       volumes:
-        - ./experiment_manager:/app 
-        - /app/.venv 
+        - ./experiment_manager:/app
+        - /app/.venv
         - /app/__pycache__
       command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
+  model_registry_service:
+      build: ./model_registry
+      container_name: model_service
+      env_file:
+        - ./.env
+      ports:
+        - "8002:8000"
+      volumes:
+        - ./model_registry:/app
+        - /app/.venv
+        - /app/__pycache__
+      command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   pgdata:

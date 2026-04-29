@@ -1,14 +1,14 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from typing import AsyncGenerator
-from fastapi import HTTPException
+from collections.abc import AsyncGenerator
 
 from core.base import Base
-from core.config import DATABASE_URL
+from core.config import settings
 
 
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(settings.DATABASE_URL_MODEL_REGISTRY_SERVICE)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+
 
 async def create_tables() -> None:
     async with engine.begin() as conn:
@@ -21,8 +21,10 @@ async def delete_tables() -> None:
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    try:
-        async with async_session_maker() as session:
+    async with async_session_maker() as session:
+        try:
             yield session
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+            await session.commit()
+        except SQLAlchemyError:
+            await session.rollback()
+            raise

@@ -1,2 +1,3 @@
 CREATE DATABASE user_db;
 CREATE DATABASE experiment_db;
+CREATE DATABASE model_db;
