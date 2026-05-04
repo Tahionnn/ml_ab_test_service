@@ -3,10 +3,12 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from core.broker import kafka_router
 from core.database import create_tables
 from core.exceptions import register_exceptions
 
 from api.v1.models import model_router
+import infrastructure.clients.bus.handlers  # noqa: F401
 
 
 @asynccontextmanager
@@ -21,7 +23,7 @@ app = FastAPI(
 )
 
 
-routers = [model_router]
+routers = [model_router, kafka_router]
 
 for router in routers:
     app.include_router(router)

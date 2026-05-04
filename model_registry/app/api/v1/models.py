@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 
-from domain.model.entities import Model
+from domain.model.entities import Model, ModelStatus
 from domain.model.service import ModelService
 
 from schemas.model import (
     CreateModelRequest,
     UpdateModelRequest,
     ChangeStatusRequest,
-    ChangeEndpointRequest,
     ModelResponse,
     SearchResponse,
 )
+from schemas.serving import DeployResponse, UndeployResponse
 
 from core.dependencies import get_model_service
 
@@ -53,21 +53,34 @@ async def search_models(
     return SearchResponse(total=result["total"], models=result["items"])
 
 
-@model_router.get("/{id}", response_model=ModelResponse, status_code=status.HTTP_200_OK)
-async def get_by_id(
-    id: int, service: ModelService = Depends(get_model_service)
-) -> ModelResponse:
-    model = await service.get_model_by_id(id)
-    return ModelResponse.model_validate(model)
-
-
 @model_router.get(
-    "/{name}/{version}", response_model=ModelResponse, status_code=status.HTTP_200_OK
+    "/name/{name}/version/{version}",
+    response_model=ModelResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def get_by_name_and_version(
     name: str, version: str, service: ModelService = Depends(get_model_service)
 ) -> ModelResponse:
     model = await service.get_model_by_name_and_version(name, version)
+    return ModelResponse.model_validate(model)
+
+
+@model_router.get(
+    "/by-status", response_model=list[ModelResponse], status_code=status.HTTP_200_OK
+)
+async def get_by_status(
+    status: ModelStatus = Query(..., description="Status to filter by"),
+    service: ModelService = Depends(get_model_service),
+) -> list[ModelResponse]:
+    models = await service.get_by_status(status)
+    return [ModelResponse.model_validate(model) for model in models]
+
+
+@model_router.get("/{id}", response_model=ModelResponse, status_code=status.HTTP_200_OK)
+async def get_by_id(
+    id: int, service: ModelService = Depends(get_model_service)
+) -> ModelResponse:
+    model = await service.get_model_by_id(id)
     return ModelResponse.model_validate(model)
 
 
@@ -84,23 +97,17 @@ async def update_model(
     return ModelResponse.model_validate(updated)
 
 
-@model_router.patch("/{id}/status", response_model=ModelResponse)
+@model_router.patch(
+    "/{id}/status", response_model=ModelResponse, status_code=status.HTTP_200_OK
+)
 async def change_status(
     id: int,
     request: ChangeStatusRequest,
     service: ModelService = Depends(get_model_service),
 ) -> ModelResponse:
-    model = await service.change_status(id, request.status)
-    return ModelResponse.model_validate(model)
 
-
-@model_router.patch("/{id}/serving-endpoint", response_model=ModelResponse)
-async def change_serving_endpoint(
-    id: int,
-    request: ChangeEndpointRequest,
-    service: ModelService = Depends(get_model_service),
-) -> ModelResponse:
-    model = await service.change_serving_endpoint(id, request.serving_endpoint)
+    domain_status = request.to_domain_status()
+    model = await service.change_status(id, domain_status)
     return ModelResponse.model_validate(model)
 
 
@@ -110,3 +117,25 @@ async def delete_model_by_id(
     service: ModelService = Depends(get_model_service),
 ) -> None:
     await service.delete_model_by_id(id)
+
+
+@model_router.post(
+    "/deploy/{model_id}", response_model=DeployResponse, status_code=status.HTTP_200_OK
+)
+async def deploy_model(
+    id: int,
+    service: ModelService = Depends(get_model_service),
+) -> DeployResponse:
+    info = await service.deploy_model(id)
+    return DeployResponse(deployment_id=info.deployment_id, status=ModelStatus.PENDING)
+
+
+@model_router.post("/undeploy/{model_id}", status_code=status.HTTP_200_OK)
+async def undeploy_model(
+    id: int,
+    service: ModelService = Depends(get_model_service),
+) -> UndeployResponse:
+
+    await service.undeploy_model(id)
+
+    return UndeployResponse(success=True, message="Undeployment initiated successfully")

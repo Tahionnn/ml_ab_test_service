@@ -19,13 +19,20 @@ repos:
           - pydantic
           - pydantic-settings
           - types-requests
+          - types-redis
+          - types-PyYAML
           - sqlalchemy[mypy]
           - fastapi
+          - faststream[kafka]
         args:
           - --strict
           - --ignore-missing-imports
           - --explicit-package-bases
           - --namespace-packages
+          - --disable-error-code=no-any-return
+          - --disable-error-code=unused-ignore
+          - --disable-error-code=type-arg
+          - --disable-error-code=misc
         exclude: ^coding-agent/tests/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

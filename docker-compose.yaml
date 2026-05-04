@@ -1,4 +1,6 @@
 services:
+
+###################### INFRASTRUCTURE ######################
   postgres:
     image: postgres:18
     container_name: postgres
@@ -21,6 +23,67 @@ services:
     restart: unless-stopped
     tty: true
     stdin_open: true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - backend_network
+      - ml_network
+
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    env_file:
+      - ./.env
+    networks:
+      - ml_network
+
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    env_file:
+      - ./.env
+    networks:
+      - ml_network
+
+
+  redis:
+    image: redis:7
+    command: redis-server --appendonly yes --appendfsync everysec
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ml_network
+
+  ray-head:
+      image: rayproject/ray:2.55.1-py313
+      container_name: ray-head
+      ports:
+        - "8265:8265"
+        - "8010:8000"
+        - "6379:6379"
+        - "10001:10001"
+      command: >
+        ray start --head --port=6379 --dashboard-host=0.0.0.0 --include-dashboard=true --block
+      #volumes:
+      #  - ./shared_data:/tmp/ray
+      networks:
+        - ml_network
+
+###################### APP ######################
 
   user_service:
     build: ./user_service
@@ -34,34 +97,93 @@ services:
       - /app/.venv
       - /app/__pycache__
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - backend_network
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 
   experiment_service:
-      build: ./experiment_manager
-      container_name: experiment_service
-      env_file:
-        - ./.env
-      ports:
-        - "8001:8000"
-      volumes:
-        - ./experiment_manager:/app
-        - /app/.venv
-        - /app/__pycache__
-      command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    build: ./experiment_manager
+    container_name: experiment_service
+    env_file:
+      - ./.env
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./experiment_manager:/app
+      - /app/.venv
+      - /app/__pycache__
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - backend_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 
   model_registry_service:
-      build: ./model_registry
-      container_name: model_service
-      env_file:
-        - ./.env
-      ports:
-        - "8002:8000"
-      volumes:
-        - ./model_registry:/app
-        - /app/.venv
-        - /app/__pycache__
-      command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    build: ./model_registry
+    container_name: model_service
+    env_file:
+      - ./.env
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./model_registry:/app
+      - /app/.venv
+      - /app/__pycache__
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - ml_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  model_serving_service:
+    build: ./model_serving
+    container_name: model_serving
+    env_file:
+      - ./.env
+    ports:
+      - "8003:8080"
+    volumes:
+      - ./model_serving:/app
+      - /app/.venv
+      - /app/__pycache__
+    command: faststream run app.main:app --host 0.0.0.0 --port 8080 --reload
+    networks:
+      - ml_network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  ###################### UI ######################
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_JMXPORT: 9997
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - kafka
+      - zookeeper
+    networks:
+      - ml_network
+    restart: unless-stopped
 
 volumes:
   pgdata:
     driver: local
+
+networks:
+  backend_network:
+    driver: bridge
+  ml_network:
+    driver: bridge

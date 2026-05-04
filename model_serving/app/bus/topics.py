@@ -1,0 +1,8 @@
+DEPLOYMENT_REQUESTED = "deployment.requested"
+ARTIFACT_DOWNLOAD_REQUESTED = "deployment.artifact.download.requested"
+ARTIFACT_DOWNLOADED = "deployment.artifact.downloaded"
+DEPLOYMENT_STARTED = "deployment.started"
+DEPLOYMENT_READY = "deployment.ready"
+DEPLOYMENT_FAILED = "deployment.failed"
+DEPLOYMENT_UNDEPLOY_REQUESTED = "deployment.undeploy.requested"
+DEPLOYMENT_UNDEPLOYED = "deployment.undeployed"

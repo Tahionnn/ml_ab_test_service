@@ -1,0 +1,15 @@
+[project]
+name = "model-serving"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "faststream[cli,kafka]>=0.6.7",
+    "loguru>=0.7.3",
+    "pydantic>=2.13.3",
+    "pydantic-settings>=2.14.0",
+    "ray[serve]>=2.55.1",
+    "redis>=7.4.0",
+    "tenacity>=9.1.4",
+]

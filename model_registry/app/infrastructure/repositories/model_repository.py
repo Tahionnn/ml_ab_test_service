@@ -2,7 +2,7 @@ from sqlalchemy import select, update, delete, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.models.model import DBModels
-from domain.model.entities import Model, ModelStatus
+from domain.model.entities import Model, ModelStatus, ModelFramework
 from domain.model.repository import ModelRepo
 from domain.model.exceptions import ModelNotFound
 
@@ -28,6 +28,20 @@ class SQLAlchemyModelRepository(ModelRepo):  # type: ignore[misc]
         db_obj = result.scalar_one_or_none()
         return self._to_domain(db_obj) if db_obj else None
 
+    async def get_by_deployment_id(self, deployment_id: int) -> Model | None:
+        stmt = select(DBModels).where(DBModels.deployment_id == deployment_id)
+
+        result = await self.session.execute(stmt)
+        db_obj = result.scalar_one_or_none()
+        return self._to_domain(db_obj) if db_obj else None
+
+    async def get_by_status(self, status: ModelStatus) -> list[Model]:
+        stmt = select(DBModels).where(DBModels.status == status.value)
+
+        result = await self.session.execute(stmt)
+        db_objs = result.scalars().all()
+        return [self._to_domain(db_obj) for db_obj in db_objs]
+
     async def search(
         self, query: str, limit: int, offset: int
     ) -> tuple[list[Model], int]:
@@ -37,6 +51,7 @@ class SQLAlchemyModelRepository(ModelRepo):  # type: ignore[misc]
             or_(
                 func.lower(DBModels.name).like(pattern),
                 func.lower(DBModels.version).like(pattern),
+                func.lower(DBModels.framework).like(pattern),
             )
         )
 
@@ -61,7 +76,9 @@ class SQLAlchemyModelRepository(ModelRepo):  # type: ignore[misc]
                 version=model.version,
                 artifact_uri=model.artifact_uri,
                 serving_endpoint=model.serving_endpoint,
+                framework=model.framework.value,
                 status=model.status.value,
+                deployment_id=model.deployment_id,
             )
             self.session.add(db_obj)
             await self.session.flush()
@@ -76,7 +93,9 @@ class SQLAlchemyModelRepository(ModelRepo):  # type: ignore[misc]
             db_obj.version = model.version
             db_obj.artifact_uri = model.artifact_uri
             db_obj.serving_endpoint = model.serving_endpoint
+            db_obj.framework = model.framework.value
             db_obj.status = model.status.value
+            db_obj.deployment_id = model.deployment_id
 
             await self.session.flush()
             return model
@@ -121,6 +140,24 @@ class SQLAlchemyModelRepository(ModelRepo):  # type: ignore[misc]
 
         return self._to_domain(db_obj)
 
+    async def update_deployment_id(self, model_id: int, new_id: int) -> Model:
+        stmt = (
+            update(DBModels)
+            .where(DBModels.id == model_id)
+            .values(deployment_id=new_id)
+            .returning(DBModels)
+        )
+
+        result = await self.session.execute(stmt)
+        db_obj = result.scalar_one_or_none()
+
+        if db_obj is None:
+            raise ModelNotFound(model_id)
+
+        await self.session.flush()
+
+        return self._to_domain(db_obj)
+
     async def list_all(
         self,
         status: ModelStatus | None = None,
@@ -149,5 +186,7 @@ class SQLAlchemyModelRepository(ModelRepo):  # type: ignore[misc]
             version=db_obj.version,
             artifact_uri=db_obj.artifact_uri,
             serving_endpoint=db_obj.serving_endpoint,
+            framework=ModelFramework(db_obj.framework),
             status=ModelStatus(db_obj.status),
+            deployment_id=db_obj.deployment_id,
         )

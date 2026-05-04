@@ -1,0 +1,5 @@
+DEPLOYMENT_REQUESTED = "deployment.requested"
+DEPLOYMENT_READY = "deployment.ready"
+DEPLOYMENT_FAILED = "deployment.failed"
+DEPLOYMENT_UNDEPLOY_REQUESTED = "deployment.undeploy.requested"
+DEPLOYMENT_UNDEPLOYED = "deployment.undeployed"

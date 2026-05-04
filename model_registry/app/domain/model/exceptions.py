@@ -15,9 +15,28 @@ class ModelNotFound(DomainException):
         super().__init__(f"Model with {model_id} not found")
 
 
+class ModelCannotBeUpdated(DomainException):
+    def __init__(self, model_id: int, status: ModelStatus) -> None:
+        super().__init__(
+            f"Model with {model_id} cannot be updated because of current status: {status}"
+        )
+
+
 class ModelCannotBeDeleted(DomainException):
     def __init__(self, model_status: ModelStatus) -> None:
         super().__init__(f"Model with status {model_status.value} cannot be deleted")
+
+
+class ModelCannotBeDeploy(DomainException):
+    def __init__(self, model_id: int, status: ModelStatus) -> None:
+        super().__init__(
+            f"Model with {model_id} cannot be deploy because of current status: {status}"
+        )
+
+
+class ModelCannotBeUndeployed(DomainException):
+    def __init__(self, model_id: int) -> None:
+        super().__init__(f"Model with {model_id} cannot be undeployed")
 
 
 class InvalidStatusTransition(DomainException):
