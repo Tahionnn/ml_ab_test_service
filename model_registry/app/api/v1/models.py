@@ -15,7 +15,7 @@ from schemas.serving import DeployResponse, UndeployResponse
 from core.dependencies import get_model_service
 
 
-model_router: APIRouter = APIRouter(prefix="/model")
+model_router: APIRouter = APIRouter(prefix="/model", tags=["Models"])
 
 
 @model_router.post(

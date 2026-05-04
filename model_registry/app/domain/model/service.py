@@ -204,6 +204,24 @@ class ModelService:
         _ = await self.repo.update_status(model_id, ModelStatus.STAGING)
         _ = await self.repo.update_deployment_id(model_id, None)
 
+    async def get_endpoints_bulk(self, model_ids: list[int]) -> dict[int, str]:
+        if not model_ids:
+            return {}
+
+        models_list = await self.repo.get_by_ids(model_ids)
+
+        models = {m.id: m for m in models_list}
+
+        result = {}
+        for model_id in model_ids:
+            model = models.get(model_id)
+            if model and model.serving_endpoint:
+                result[model_id] = model.serving_endpoint
+            else:
+                result[model_id] = ""
+
+        return result
+
     def _is_valid_transition(
         self, from_status: ModelStatus, to_status: ModelStatus
     ) -> bool:

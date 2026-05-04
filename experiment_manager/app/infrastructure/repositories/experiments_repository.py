@@ -78,6 +78,18 @@ class SQLAlchemyExperimentRepository(ExperimentsRepo):
         result = await self.session.execute(stmt)
         return [self._to_domain(obj) for obj in result.scalars().all()]
 
+    async def list_by_status(self, status: ExperimentStatus) -> list[Experiment]:
+        stmt = (
+            select(DBExperiments)
+            .where(
+                DBExperiments.deleted_at.is_(None), DBExperiments.status == status.value
+            )
+            .options(selectinload(DBExperiments.variants))
+            .order_by(DBExperiments.id.desc())
+        )
+        result = await self.session.execute(stmt)
+        return [self._to_domain(obj) for obj in result.scalars().all()]
+
     async def delete_by_id(self, experiment_id: int) -> None:
         stmt = (
             update(DBExperiments)
@@ -100,17 +112,17 @@ class SQLAlchemyExperimentRepository(ExperimentsRepo):
             raise ExperimentNotFound(experiment_id)
 
         db_obj.deleted_at = None
-        
+
         await self.session.execute(
             update(DBExperimentVariants)
             .where(DBExperimentVariants.experiment_id == experiment_id)
             .values(deleted_at=None)
         )
-        
+
         await self.session.flush()
 
         return self._to_domain(db_obj)
-    
+
     def _to_domain(self, db_obj: DBExperiments) -> Experiment:
         variants = [
             Variant(

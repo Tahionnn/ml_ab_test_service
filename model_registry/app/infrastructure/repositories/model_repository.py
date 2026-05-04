@@ -42,6 +42,15 @@ class SQLAlchemyModelRepository(ModelRepo):  # type: ignore[misc]
         db_objs = result.scalars().all()
         return [self._to_domain(db_obj) for db_obj in db_objs]
 
+    async def get_by_ids(self, model_ids: list[int]) -> list[Model]:
+        if not model_ids:
+            return []
+
+        stmt = select(DBModels).where(DBModels.id.in_(model_ids))
+        result = await self.session.execute(stmt)
+        db_objs = result.scalars().all()
+        return [self._to_domain(db_obj) for db_obj in db_objs]
+
     async def search(
         self, query: str, limit: int, offset: int
     ) -> tuple[list[Model], int]:

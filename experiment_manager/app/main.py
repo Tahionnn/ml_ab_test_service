@@ -4,10 +4,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.database import create_tables
+from core.exceptions import register_exceptions
 
 from api.v1.experiments import experiment_router
 from api.v1.variants import variant_router
 from api.v1.metrics import metric_router
+from api.v1.internal import internal_router
 
 
 @asynccontextmanager
@@ -22,10 +24,12 @@ app = FastAPI(
 )
 
 
-routers = (experiment_router, variant_router, metric_router)
+routers = (experiment_router, variant_router, metric_router, internal_router)
 
 for router in routers:
     app.include_router(router)
+
+register_exceptions(app)
 
 app.add_middleware(
     CORSMiddleware,

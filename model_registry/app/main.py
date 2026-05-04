@@ -8,6 +8,7 @@ from core.database import create_tables
 from core.exceptions import register_exceptions
 
 from api.v1.models import model_router
+from api.v1.internal import internal_router
 import infrastructure.clients.bus.handlers  # noqa: F401
 
 
@@ -23,7 +24,7 @@ app = FastAPI(
 )
 
 
-routers = [model_router, kafka_router]
+routers = [model_router, internal_router, kafka_router]
 
 for router in routers:
     app.include_router(router)

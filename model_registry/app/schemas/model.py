@@ -110,6 +110,7 @@ class ModelResponse(BaseModel):
     name: str = Field(..., min_length=2, max_length=50)
     version: str
     artifact_uri: AnyUrl
+    serving_endpoint: str | None
     framework: ModelFramework
     status: ModelStatus = Field(default=ModelStatusAPI.STAGING)
     deployment_id: uuid.UUID | None
