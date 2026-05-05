@@ -54,26 +54,29 @@ repos:
     hooks:
       - id: golangci-lint
         name: golangci-lint
-        entry: golangci-lint
+        entry: bash -lc 'cd traffic_splitter && golangci-lint run ./...'
         language: system
+        pass_filenames: false
         types: [go]
+        additional_dependencies: []
 
       - id: go-fmt
         name: go-fmt
-        entry: go fmt ./...
+        entry: bash -lc 'cd traffic_splitter && go fmt ./...'
         language: system
         pass_filenames: false
         types: [go]
 
       - id: go-imports
         name: go-imports
-        entry: goimports -w
+        entry: bash -lc 'cd traffic_splitter && goimports -w $(find . -name "*.go")'
         language: system
+        pass_filenames: false
         types: [go]
 
       - id: go-unit-tests
         name: go-unit-tests
-        entry: bash -lc 'go test ./...'
+        entry: bash -lc 'cd traffic_splitter && go test ./...'
         language: system
         pass_filenames: false
         types: [go]

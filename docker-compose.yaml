@@ -159,6 +159,23 @@ services:
       redis:
         condition: service_healthy
 
+  traffic_splitter:
+    build: ./traffic_splitter
+    container_name: traffic_splitter
+    env_file:
+      - ./.env
+    ports:
+      - "50051:50051"
+    networks:
+      - backend_network
+      - ml_network
+    #depends_on:
+    #  experiment_service:
+    #    condition: service_healthy
+    #  model_registry_service:
+    #    condition: service_healthy
+
+
   ###################### UI ######################
   kafka-ui:
     image: provectuslabs/kafka-ui:latest

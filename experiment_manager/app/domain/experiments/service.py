@@ -133,7 +133,7 @@ class ExperimentService:
 
         experiment = await self.get_experiment_by_id(variant.experiment_id)
 
-        if experiment.status != ExperimentStatus.DRAFT:
+        if experiment.status not in (ExperimentStatus.DRAFT, ExperimentStatus.PAUSED):
             raise ValueError("Cannot update variant")
 
         existing_in_db = await self.variant_repo.get_by_id(updated_variant.id)
