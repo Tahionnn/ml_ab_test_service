@@ -86,14 +86,14 @@ services:
 ###################### APP ######################
 
   user_service:
-    build: ./user_service
+    build: ./services/user_service
     container_name: user_service
     env_file:
       - ./.env
     ports:
       - "8000:8000"
     volumes:
-      - ./user_service:/app
+      - ./services/user_service:/app
       - /app/.venv
       - /app/__pycache__
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -105,14 +105,14 @@ services:
 
 
   experiment_service:
-    build: ./experiment_manager
+    build: ./services/experiment_manager
     container_name: experiment_service
     env_file:
       - ./.env
     ports:
       - "8001:8000"
     volumes:
-      - ./experiment_manager:/app
+      - ./services/experiment_manager:/app
       - /app/.venv
       - /app/__pycache__
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -124,14 +124,14 @@ services:
 
 
   model_registry_service:
-    build: ./model_registry
+    build: ./services/model_registry
     container_name: model_service
     env_file:
       - ./.env
     ports:
       - "8002:8000"
     volumes:
-      - ./model_registry:/app
+      - ./services/model_registry:/app
       - /app/.venv
       - /app/__pycache__
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -142,14 +142,14 @@ services:
         condition: service_healthy
 
   model_serving_service:
-    build: ./model_serving
+    build: ./services/model_serving
     container_name: model_serving
     env_file:
       - ./.env
     ports:
       - "8003:8080"
     volumes:
-      - ./model_serving:/app
+      - ./services/model_serving:/app
       - /app/.venv
       - /app/__pycache__
     command: faststream run app.main:app --host 0.0.0.0 --port 8080 --reload
@@ -160,7 +160,9 @@ services:
         condition: service_healthy
 
   traffic_splitter:
-    build: ./traffic_splitter
+    build:
+      context: .
+      dockerfile: ./services/traffic_splitter/Dockerfile
     container_name: traffic_splitter
     env_file:
       - ./.env
