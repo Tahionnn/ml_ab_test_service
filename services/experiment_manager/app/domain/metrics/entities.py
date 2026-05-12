@@ -16,8 +16,8 @@ class Unit(Enum):
 
 @dataclass
 class Metric:
-    name: str
-    type: MetricType
-    formula: str
-    unit: Unit
+    name: str = ""
+    type: MetricType = MetricType.RATIO
+    formula: str = ""
+    unit: Unit = Unit.PERCENT
     id: int | None = None

@@ -14,9 +14,7 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
     return UserResponse.from_domain(usr=current_user)
 
 
-user_router.get("/{id}", response_model=UserResponse, status_code=status.HTTP_200_OK)
-
-
+@user_router.get("/{id}", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def get_user_by_id(
     id: int,
     service: UserService = Depends(get_user_service),

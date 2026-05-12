@@ -36,6 +36,13 @@ class ExperimentResponse(BaseModel):
     start_date: datetime
     end_date: datetime | None
 
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
+            datetime: lambda v: v.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        }
+    )
+
     @classmethod
     def from_domain(cls, exp: Experiment) -> "ExperimentResponse":
         return cls(

@@ -10,6 +10,7 @@ from domain.experiments.exceptions import (
     NotEnoughVariants,
     InvalidStatusTransition,
     ExperimentCannotBeDeleted,
+    ExperimentAlreadyExists
 )
 
 from domain.metrics.exceptions import MetricNotFound
@@ -55,6 +56,8 @@ def register_exceptions(app: FastAPI) -> None:
     register(InvalidStatusTransition, 400)
     register(ExperimentCannotBeDeleted, 400)
     register(MetricAlreadyAttached, 400)
+
+    register(ExperimentAlreadyExists, 409)
 
     register(WeightsDoNotSumTo100, 422)
     register(NotEnoughVariants, 422)

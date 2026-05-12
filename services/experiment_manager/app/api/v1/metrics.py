@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
+from domain.metrics.entities import Metric
 from domain.metrics.service import MetricService
 
 from schemas.metrics import CreateMetricRequest, UpdateMetricRequest, MetricResponse
@@ -50,10 +51,11 @@ async def update_metric(
     request: UpdateMetricRequest,
     service: MetricService = Depends(get_metric_service),
 ) -> MetricService:
-    metric = await service.get_by_metric_by_id(metric_id)
-    metric = request.apply(metric)
+    existing_metric = await service.get_by_metric_by_id(metric_id)
 
-    updated = await service.update_metric(metric)
+    updated_metric_data = request.apply(existing_metric)
+    
+    updated = await service.update_metric(updated_metric_data)
 
     return MetricResponse.from_domain(updated)
 

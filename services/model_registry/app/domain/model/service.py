@@ -227,6 +227,7 @@ class ModelService:
     ) -> bool:
         transitions = {
             ModelStatus.STAGING: {ModelStatus.PRODUCTION},
+            ModelStatus.STAGING: {ModelStatus.ARCHIVED},
             ModelStatus.PRODUCTION: {ModelStatus.ARCHIVED},
             ModelStatus.ARCHIVED: set(),
         }

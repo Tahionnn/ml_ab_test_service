@@ -14,7 +14,7 @@ class UserNotFound(DomainException):
 
 class UserAlreadyExists(DomainException):
     def __init__(self, user_id: int) -> None:
-        super().__init__(f"User with {user_id} alreayd exists")
+        super().__init__(f"User with {user_id} already exists")
 
 
 class InvalidCredentials(DomainException):

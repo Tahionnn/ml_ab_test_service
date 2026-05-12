@@ -34,10 +34,5 @@ class MetricService:
         if updated_metric.id is None:
             raise ValueError("Metric id cannot be None")
 
-        metric = await self.repo.get_by_id(updated_metric.id)
-
-        if metric is None:
-            raise MetricNotFound(updated_metric.id)
-
-        metric = await self.repo.save(metric)
+        metric = await self.repo.save(updated_metric)
         return metric

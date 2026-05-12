@@ -243,3 +243,5 @@ go.work.sum
 
 *.pb.go
 *_grpc.pb.go
+
+services/*/docs/*

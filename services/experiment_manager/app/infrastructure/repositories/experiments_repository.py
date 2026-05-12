@@ -1,12 +1,13 @@
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 
 from infrastructure.models.experiments import DBExperiments
 from infrastructure.models.variants import DBExperimentVariants
 from domain.experiments.repository import ExperimentsRepo
 from domain.experiments.entities import Experiment, ExperimentStatus
-from domain.experiments.exceptions import ExperimentNotFound
+from domain.experiments.exceptions import ExperimentNotFound, ExperimentAlreadyExists
 from domain.variants.entities import Variant
 
 from datetime import datetime, timezone
@@ -30,20 +31,21 @@ class SQLAlchemyExperimentRepository(ExperimentsRepo):
         return self._to_domain(db_obj) if db_obj else None
 
     async def save(self, experiment: Experiment) -> Experiment:
-        if experiment.id is None:
-            db_obj = DBExperiments(
-                name=experiment.name,
-                description=experiment.description,
-                status=experiment.status.value,
-                traffic_percent=experiment.traffic_percent,
-                start_date=experiment.start_date,
-                end_date=experiment.end_date,
-            )
-            self.session.add(db_obj)
-            await self.session.flush()
-            experiment.id = db_obj.id
-            return experiment
-        else:
+        try:
+            if experiment.id is None:
+                db_obj = DBExperiments(
+                    name=experiment.name,
+                    description=experiment.description,
+                    status=experiment.status.value,
+                    traffic_percent=experiment.traffic_percent,
+                    start_date=experiment.start_date,
+                    end_date=experiment.end_date,
+                )
+                self.session.add(db_obj)
+                await self.session.flush()
+                experiment.id = db_obj.id
+                return experiment
+
             db_obj = await self.session.get(DBExperiments, experiment.id)
             if not db_obj:
                 raise ExperimentNotFound(experiment.id)
@@ -57,6 +59,11 @@ class SQLAlchemyExperimentRepository(ExperimentsRepo):
 
             await self.session.flush()
             return experiment
+
+        except IntegrityError as e:
+            await self.session.rollback()
+
+            raise ExperimentAlreadyExists(experiment.name) from e
 
     async def list_all(
         self,

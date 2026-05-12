@@ -5,13 +5,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     REDIS_URL: str = ""
     RAY_SERVE_ADDRESS: str = ""
+    SERVE_URL: str = ""
     KAFKA_BOOTSTRAP_SERVERS: str = Field(
         default="localhost:9092", alias="KAFKA_BOOTSTRAP_SERVERS"
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
-    ray_serve_address: str = Field(
-        default="http://127.0.0.1:8265", alias="RAY_SERVE_ADDRESS"
-    )
     artifacts_root: str = Field(
         default="/tmp/model-serving-artifacts", alias="ARTIFACTS_ROOT"
     )

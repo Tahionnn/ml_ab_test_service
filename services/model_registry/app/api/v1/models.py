@@ -120,7 +120,7 @@ async def delete_model_by_id(
 
 
 @model_router.post(
-    "/deploy/{model_id}", response_model=DeployResponse, status_code=status.HTTP_200_OK
+    "/deploy/{id}", response_model=DeployResponse, status_code=status.HTTP_200_OK
 )
 async def deploy_model(
     id: int,
@@ -130,7 +130,7 @@ async def deploy_model(
     return DeployResponse(deployment_id=info.deployment_id, status=ModelStatus.PENDING)
 
 
-@model_router.post("/undeploy/{model_id}", status_code=status.HTTP_200_OK)
+@model_router.post("/undeploy/{id}", response_model=UndeployResponse, status_code=status.HTTP_200_OK)
 async def undeploy_model(
     id: int,
     service: ModelService = Depends(get_model_service),

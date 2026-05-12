@@ -32,7 +32,6 @@ services:
       - backend_network
       - ml_network
 
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
@@ -51,9 +50,25 @@ services:
       - "9092:9092"
     env_file:
       - ./.env
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-cluster cluster-id --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - ml_network
 
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./infra/kafka_init.sh:/init.sh
+    entrypoint: ["/bin/sh", "/init.sh"]
+    networks:           
+      - ml_network
 
   redis:
     image: redis:7
@@ -125,7 +140,7 @@ services:
 
   model_registry_service:
     build: ./services/model_registry
-    container_name: model_service
+    container_name: model_registry
     env_file:
       - ./.env
     ports:
@@ -139,6 +154,8 @@ services:
       - ml_network
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   model_serving_service:
@@ -157,6 +174,8 @@ services:
       - ml_network
     depends_on:
       redis:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   traffic_splitter:
@@ -177,13 +196,40 @@ services:
     #  model_registry_service:
     #    condition: service_healthy
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./services/api_gateway/Dockerfile
+    container_name: api_gateway
+    env_file:
+      - ./.env
+    ports:
+      - "8080:8080"
+    networks:
+      - backend_network
+      - ml_network
+    depends_on:
+      user_service:
+        condition: service_started
+      experiment_service:
+        condition: service_started
+      model_registry_service:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      
+
 
   ###################### UI ######################
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092

@@ -11,11 +11,15 @@ from domain.deployment.exceptions import UnsupportedModelType
 
 from infrastructure.deployers.ray.model_type import _MODEL_TYPE
 
+from core.config import settings
+
 
 class RayDeployer(ModelDeployer):  # type: ignore
     _initialized = False
 
     def __init__(self, address: str):
+        self.base_url = settings.SERVE_URL
+
         if not RayDeployer._initialized:
             if not ray.is_initialized():
                 ray.init(
@@ -92,8 +96,10 @@ class RayDeployer(ModelDeployer):  # type: ignore
 
         logger.info(f"Successfully started deployment {deployment_name} at {endpoint}")
 
+        full_endpoint = f"{self.base_url}{endpoint}"        
+
         return DeploymentInfo(
-            endpoint=endpoint,
+            endpoint=full_endpoint,
             deployment_id=deployment_id,
             metadata={
                 "deployment_name": deployment_name,

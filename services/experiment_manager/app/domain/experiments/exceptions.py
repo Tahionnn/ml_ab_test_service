@@ -37,3 +37,9 @@ class NotEnoughVariants(DomainException):
         super().__init__(
             "Experiment must have at least 2 variants (control + test) to start"
         )
+
+class ExperimentAlreadyExists(DomainException):
+    def __init__(self, name: str) -> None:
+        super().__init__(
+            f"Active experiment with name '{name}' already exists"
+        )

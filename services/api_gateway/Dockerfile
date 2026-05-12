@@ -2,8 +2,7 @@ FROM golang:1.25-alpine3.22 AS builder
 
 RUN apk add --no-cache ca-certificates tzdata protobuf protobuf-dev
 
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 
 WORKDIR /app
 
@@ -12,7 +11,11 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /server ./cmd/server/main.go
+RUN swag init -g services/api_gateway/cmd/server/main.go \
+              -o services/api_gateway/docs \
+              --parseDependency
+
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /server ./services/api_gateway/cmd/server/main.go
 
 FROM alpine:3.20
 
@@ -24,6 +27,6 @@ COPY --from=builder --chown=appuser:appgroup --chmod=755 /server /server
 
 USER appuser
 
-EXPOSE 50051
+EXPOSE 8080
 
 CMD ["/server"]

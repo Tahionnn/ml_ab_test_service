@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from domain.metrics.entities import Metric, MetricType, Unit
 
 
@@ -20,28 +20,22 @@ class CreateMetricRequest(BaseModel):
 
 class UpdateMetricRequest(BaseModel):
     name: str | None = None
-    type: str | None = None
+    type: MetricType | None = Field(None)
     formula: str | None = None
-    unit: str | None = None
+    unit: Unit | None = Field(None)
 
     def apply(self, metric: Metric) -> Metric:
-        if self.name is not None:
-            metric.name = self.name
-        if self.type is not None:
-            metric.type = self.type
-        if self.formula is not None:
-            metric.formula = self.formula
-        if self.unit is not None:
-            metric.unit = self.unit
+        for key, value in self.model_dump(exclude_unset=True).items():
+            setattr(metric, key, value)
         return metric
 
 
 class MetricResponse(BaseModel):
     id: int
     name: str
-    type: str
+    type: MetricType
     formula: str
-    unit: str
+    unit: Unit
 
     @classmethod
     def from_domain(cls, m: Metric) -> "MetricResponse":
